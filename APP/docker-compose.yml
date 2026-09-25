@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  app_sender:
+    build: .
+    ports:
+      - "8081:80"
+    environment:
+      DB_HOST: db
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true
