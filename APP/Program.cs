@@ -8,31 +8,6 @@ var app = builder.Build();
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "db";
 var connectionString = $"Host={dbHost};Database=mydb;Username=user;Password=password";
 
-using (var conn = new NpgsqlConnection(connectionString))
-{
-    int retries = 5;
-    while (retries > 0)
-    {
-        try
-        {
-            conn.Execute(@"
-                CREATE TABLE IF NOT EXISTS requests (
-                    id SERIAL PRIMARY KEY,
-                    full_name TEXT NOT NULL,
-                    phone TEXT NOT NULL,
-                    email TEXT NOT NULL,
-                    comment TEXT NOT NULL
-                );");
-            break;
-        }
-        catch
-        {
-            retries--;
-            Thread.Sleep(2000);
-        }
-    }
-}
-
 app.MapGet("/", async () =>
 {
     using var conn = new NpgsqlConnection(connectionString);
@@ -59,7 +34,6 @@ app.MapGet("/", async () =>
             button { background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; }
             button:hover { background-color: #218838; }
             
-            /* Стили для таблицы вывода данных */
             table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 15px; }
             th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-size: 14px; }
             th { background-color: #007bff; color: white; }
@@ -96,7 +70,7 @@ app.MapGet("/", async () =>
 
     if (!requests.Any())
     {
-        sb.Append("<div class='no-data'>Данных в базе пока нет или они были удалены вторым контейнером.</div>");
+        sb.Append("<div class='no-data'>Данных в базе пока нет.</div>");
     }
     else
     {

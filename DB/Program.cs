@@ -8,12 +8,35 @@ var app = builder.Build();
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST") ?? "db";
 var connectionString = $"Host={dbHost};Database=mydb;Username=user;Password=password";
 
+using (var conn = new NpgsqlConnection(connectionString))
+{
+    int retries = 5;
+    while (retries > 0)
+    {
+        try
+        {
+            conn.Execute(@"
+                CREATE TABLE IF NOT EXISTS requests (
+                    id SERIAL PRIMARY KEY,
+                    full_name TEXT NOT NULL,
+                    phone TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    comment TEXT NOT NULL
+                );");
+            break;
+        }
+        catch
+        {
+            retries--;
+            Thread.Sleep(2000);
+        }
+    }
+}
+
 app.MapGet("/", async () =>
 {
     using var conn = new NpgsqlConnection(connectionString);
-    
-    var requests = await conn.QueryAsync<UserRequest>(
-        "SELECT id, full_name, phone, email, comment FROM requests ORDER BY id DESC;");
+    var requests = await conn.QueryAsync<UserRequest>("SELECT id, full_name, phone, email, comment FROM requests ORDER BY id DESC;");
 
     var sb = new StringBuilder();
     sb.Append(@"
@@ -52,7 +75,7 @@ app.MapGet("/", async () =>
                     <th>ФИО</th>
                     <th>Телефон</th>
                     <th>Email</th>
-                    <th>Текст</th>
+                    <th>Комментарий</th>
                 </tr>");
 
         foreach (var req in requests)
@@ -69,10 +92,9 @@ app.MapGet("/", async () =>
     }
 
     sb.Append("</div></body></html>");
-
     return Results.Content(sb.ToString(), "text/html", Encoding.UTF8);
 });
 
-app.Run("http://0.0.0");
+app.Run("http://0.0.0.0:80");
 
 public record UserRequest(int id, string full_name, string phone, string email, string comment);
